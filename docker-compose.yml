@@ -1,0 +1,42 @@
+# HTTPS front end (Caddy, automatic Let's Encrypt) + the app on a private network.
+#   cp .env.example .env && $EDITOR .env && docker compose up -d --build
+#   python scripts/smoke_check.py --base https://$LABDEMO_DOMAIN
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      LABDEMO_SECURE_COOKIES: "1"             # Secure cookies + HSTS
+      LABDEMO_TRUST_PROXY: "1"                # trust Caddy's X-Forwarded-* ...
+      LABDEMO_PROXY_HOPS: "1"                 # ... exactly one proxy deep (use 2 behind a CDN)
+      LABDEMO_ALLOWED_HOSTS: ${LABDEMO_DOMAIN:?set LABDEMO_DOMAIN in .env}
+    volumes:
+      - labdemo-instance:/app/instance        # SQLite progress + (if not set via env) the secret key
+    expose:
+      - "8000"                                # reachable by caddy only; deliberately not published
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      LABDEMO_DOMAIN: ${LABDEMO_DOMAIN:?set LABDEMO_DOMAIN in .env}
+    ports:
+      - "80:80"                               # ACME challenge + redirect to https
+      - "443:443"
+      - "443:443/udp"                         # HTTP/3
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data                      # certificates: keep this volume or you will re-issue (rate limits!)
+      - caddy-config:/config
+
+volumes:
+  labdemo-instance:
+  caddy-data:
+  caddy-config:

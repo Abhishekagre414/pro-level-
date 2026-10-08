@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}AI Security Storyline Labs{% endblock %}
+{% block content %}
+<div class="hero">
+  <div class="kicker">Hack The AI &middot; Attack Surface Lab</div>
+  <h1>AI Security Storyline Labs</h1>
+  <p class="lede">Two storylines, five cases each. Each storyline opens one case at a time: capture a case's flag to unlock the next. Pick a case to step into the analyst's seat and work it end to end &mdash; hypothesis, hands-on sandbox, evidence, attack-chain reconstruction and a final report.</p>
+  <div class="dev-credit">Lab developer: <b>{{ developer }}</b> &middot; Your points: <b>{{ total_points }} / {{ max_points }}</b> ({{ lab_points }} per completed lab)</div>
+</div>
+
+{% for g in groups %}
+<section class="storyline" id="{{ g.part|lower|replace(' ', '-') }}" data-accent="{{ g.accent }}">
+  <header class="storyline-head">
+    <div class="storyline-kicker">{{ g.part }}</div>
+    <h2>{{ g.title }}</h2>
+    <div class="storyline-tagline">{{ g.tagline }}</div>
+    <p class="storyline-blurb">{{ g.blurb }}</p>
+    <div class="storyline-progress" aria-label="{{ g.done }} of {{ g.labs|length }} labs completed">
+      <span class="storyline-progress-bar"><span class="storyline-progress-fill" data-pct="{{ (100 * g.done / g.labs|length)|round|int }}"></span></span>
+      <span class="storyline-progress-text">{{ g.done }} / {{ g.labs|length }} labs completed &middot; {{ g.points }} points</span>
+    </div>
+  </header>
+
+  <div class="case-grid">
+    {% for lid in g.labs %}
+      {% set m = meta[lid] %}
+      {% if lid in after %}
+      <div class="case-card locked" aria-disabled="true" data-accent="{{ m.accent }}">
+        <div class="case-card-top">
+          <span class="case-card-num">{{ m.num }}</span>
+          <span class="sev-badge">&#128274; LOCKED</span>
+        </div>
+        <h3>{{ m.name }}</h3>
+        <div class="case-card-client">{{ m.client }}</div>
+        <p class="case-card-topic">{{ m.topic }}</p>
+        <div class="case-card-foot stacked"><span class="level">{{ m.difficulty }}</span><span>Finish case {{ after[lid].num }} &middot; {{ after[lid].name }} to unlock</span></div>
+      </div>
+      {% else %}
+      <a class="case-card" href="{{ url_for('brief', lab_id=lid) }}" data-accent="{{ m.accent }}">
+        <div class="case-card-top">
+          <span class="case-card-num">{{ m.num }}</span>
+          <span class="sev-badge">{{ m.severity }}</span>
+        </div>
+        <h3>{{ m.name }}</h3>
+        <div class="case-card-client">{{ m.client }}</div>
+        <p class="case-card-topic">{{ m.topic }}</p>
+        <div class="case-card-foot">
+          <span>{{ m.difficulty }}</span>
+          {% if done[lid] %}<span class="go done">&#10003; Completed &middot; +{{ lab_points }} pts</span>{% elif flags[lid] %}<span class="go">Flag captured &middot; finish the steps</span>{% else %}<span class="go">Open case &rarr;</span>{% endif %}
+        </div>
+      </a>
+      {% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endfor %}
+{% endblock %}

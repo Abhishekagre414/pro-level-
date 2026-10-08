@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<title>{% block title %}AI Security Storyline Labs{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<script src="{{ url_for('static', filename='ui.js') }}" defer></script>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">&#128737;</div>
+      <div>
+        <div class="brand-title">Hack The AI</div>
+        <div class="brand-sub">Storyline Labs</div>
+      </div>
+    </div>
+    <nav class="case-list">
+      {% for g in storyline_groups %}
+        <div class="case-group">{{ g.part }} &middot; {{ g.title }}</div>
+        {% for lid in g.labs %}
+          {% set m = lab_meta_all[lid] %}
+          {% if lid in locked_labs %}
+          <span class="case-link locked" title="Finish the previous case to unlock"><span class="case-num">&#128274;</span><span class="case-name">{{ m.name }}</span></span>
+          {% else %}
+          <a class="case-link {% if lab_id is defined and lid == lab_id %}active{% endif %}" href="{{ url_for('brief', lab_id=lid) }}">
+            <span class="case-num">{{ m.num }}</span>
+            <span class="case-name">{{ m.name }}</span>
+          </a>
+          {% endif %}
+        {% endfor %}
+      {% endfor %}
+    </nav>
+    <div class="dev-side">Lab developer<br><b>{{ developer }}</b></div>
+    <form class="inline-form" method="post" action="{{ url_for('reset_all') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="reset-link" type="submit" data-confirm="Reset ALL labs? This clears every lab, your points and the unlocked cases.">Reset all progress</button>
+    </form>
+  </aside>
+
+  <main class="content{% if lab_id is defined %} lab-dark{% endif %}">
+    {% if lab_id is defined %}
+    <div class="case-topbar" data-accent="{{ meta.accent }}">
+      <div class="case-topbar-left">
+        <span class="pill">{{ meta.client }}</span>
+        <span class="pill severity">{{ meta.severity }}</span>
+        <span class="case-title">{{ meta.num }} &middot; {{ meta.name }}</span>
+        <span class="dev-pill">Lab developer: {{ developer }}</span>
+      </div>
+      <form class="inline-form" method="post" action="{{ url_for('reset', lab_id=lab_id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="reset-link small" type="submit" data-confirm="Restart this case from the Case Briefing? Your progress in this lab will be cleared (points you already earned are kept).">restart this case</button>
+      </form>
+    </div>
+    {% if not hide_steps %}
+    <ol class="progress-steps labnav-steps" aria-label="Lab navigation">
+      {% for st in step_nav %}
+        <li><a class="labnav-pill {{ st.state }}" href="{{ st.url }}" {% if st.state == 'current' %}aria-current="step"{% endif %}><span class="dot"></span>{{ st.label }}</a></li>
+      {% endfor %}
+    </ol>
+    {% endif %}
+    {% endif %}
+
+    <div class="page">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</div>
+</body>
+</html>

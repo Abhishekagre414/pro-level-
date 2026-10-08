@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ meta.name }} &mdash; Hypothesis{% endblock %}
+{% block content %}
+<div class="panel">
+  <div class="kicker">Before You Dig In</div>
+  <h1>{{ hyp.prompt }}</h1>
+
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="option-list">
+      {% for key, text in hyp.options.items() %}
+        <label class="option {% if submitted and key == submitted %}chosen{% endif %} {% if submitted and key == hyp.best_supported %}correct-key{% endif %}">
+          <input type="radio" name="choice" value="{{ key }}" {% if prog.hypothesis == key %}checked{% endif %} {% if submitted %}disabled{% endif %}>
+          <span class="option-key">{{ key|upper }}</span>
+          <span class="option-text">{{ text }}</span>
+        </label>
+      {% endfor %}
+    </div>
+
+    {% if not submitted %}
+      <button class="btn" type="submit">Lock In Hypothesis</button>
+    {% endif %}
+  </form>
+
+  {% if submitted %}
+    <div class="feedback {% if prog.hypothesis_correct %}good{% else %}warn{% endif %}">
+      {% if prog.hypothesis_correct %}
+        <strong>Best-supported hypothesis.</strong> Good instinct &mdash; keep this in mind as you gather evidence.
+      {% else %}
+        <strong>Worth testing, but not the best-supported option.</strong> Option <strong>{{ hyp.best_supported|upper }}</strong> is what the evidence trail actually points to. You'll see why as you investigate.
+      {% endif %}
+    </div>
+    <a class="btn" href="{{ url_for('room', lab_id=lab_id) }}">Enter the Sandbox Room &rarr;</a>
+  {% endif %}
+</div>
+{% endblock %}

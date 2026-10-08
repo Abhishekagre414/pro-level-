@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ meta.name }} &mdash; Briefing{% endblock %}
+{% block content %}
+<div class="panel">
+  <div class="kicker">Case Briefing</div>
+  <h1>{{ case.client }} &mdash; Incident {{ case.incident_id }}</h1>
+
+  <div class="fact-row">
+    <div><span class="fact-label">Role</span>{{ case.role }}</div>
+    <div><span class="fact-label">Date</span>{{ case.date }}</div>
+    <div><span class="fact-label">Severity</span>{{ case.severity }}</div>
+    <div><span class="fact-label">Lab developer</span>{{ developer }}</div>
+  </div>
+
+  <div class="callout">
+    <div class="callout-label">Initial Alert</div>
+    <p>{{ case.initial_alert }}</p>
+  </div>
+
+  <h3>Summary</h3>
+  <p>{{ case.summary }}</p>
+
+  <h3>Objective</h3>
+  <p>{{ case.objective }}</p>
+
+  {% if case.business_impact %}
+  <h3>Business Impact</h3>
+  <p>{{ case.business_impact }}</p>
+  {% endif %}
+
+  <div class="mentor-note">
+    <span class="mentor-tag">Mentor</span>
+    <p>{{ meta.mentor_note }}</p>
+  </div>
+
+  <h3>How {{ case.client }} normally works</h3>
+  <p>{{ concept.normal_architecture }}</p>
+  <p>{{ concept.security_control }}</p>
+
+  <h3>Attack surface</h3>
+  <p>{{ concept.attack_surface }}</p>
+
+  <a class="btn" href="{{ url_for('hypothesis', lab_id=lab_id) }}">Begin Investigation &rarr;</a>
+</div>
+{% endblock %}

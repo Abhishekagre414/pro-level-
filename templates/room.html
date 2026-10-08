@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}{{ meta.name }} &mdash; Sandbox Room{% endblock %}
+{% block content %}
+<div class="room-head">
+  <div>
+    <div class="kicker">Sandbox Room &middot; {{ meta.tool }}</div>
+    <h1>{{ meta.name }}</h1>
+    <div class="dev-line">Lab developer: <b>{{ developer }}</b></div>
+  </div>
+  <div class="room-stats">
+    <div><span id="pts">{{ points100 }}</span>/100 <small>task points</small></div>
+    <div><span id="tasks-done">{{ done_tasks }}</span>/{{ tasks|length }} <small>tasks</small></div>
+    <button class="btn small" id="hint-btn" type="button">Hint <span class="muted" id="hint-count">({{ prog.hints_used }}/{{ hints_total }})</span></button>
+  </div>
+</div>
+<div id="hint-box" class="hint-box" hidden></div>
+
+<div class="room-shell"><div class="room-grid">
+  <section class="tasks">
+    <div class="labbar" id="labbar" data-run="{{ run }}">
+      <div class="labbar-main">
+        <button type="button" class="btn lab-toggle" id="lab-toggle">&#9654; Start Lab</button>
+        <div class="lab-timer"><span class="lab-timer-label">Lab time</span><span class="lab-timer-value" id="lab-time">00:00:00</span></div>
+        <form class="inline-form" method="post" action="{{ url_for('reset', lab_id=lab_id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn ghost small lab-reset" type="submit" data-confirm="Reset this lab and start again from the Case Briefing? Your progress in this lab will be cleared (points you already earned are kept).">&#8635; Reset Lab</button>
+        </form>
+        <span class="lab-state" id="lab-state">Stopped</span>
+      </div>
+      <nav class="labnav" aria-label="Lab navigation">
+        <ol class="labnav-steps">
+          {% for st in step_nav %}
+          <li><a class="labnav-pill {{ st.state }}" href="{{ st.url }}" {% if st.state == 'current' %}aria-current="step"{% endif %}><span class="dot"></span>{{ st.label }}</a></li>
+          {% endfor %}
+        </ol>
+      </nav>
+    </div>
+    {% for t in tasks %}
+    <details class="task {% if t.done %}done{% endif %}" id="task-{{ t.id }}" {% if loop.first %}open{% endif %}>
+      <summary><span class="task-no">TASK {{ loop.index }}</span><span class="task-name">{{ t.title }}</span><span class="task-tick" aria-hidden="true"></span></summary>
+      <div class="task-body">
+        <p class="task-story">{{ t.story }}</p>
+        <div class="task-steps">
+          <div class="steps-label">Try in the terminal</div>
+          {% for s in t.steps %}<code>{{ s }}</code>{% endfor %}
+        </div>
+        {% for q in t.questions %}
+          {% if q.type == 'choice' %}
+          <div class="question {% if q.solved %}solved{% endif %}" data-qid="{{ q.id }}" data-qtype="choice">
+            <p class="q-text">{{ q.prompt }}</p>
+            <div class="choice-list">
+              {% for key, text in q.options.items() %}
+                <label><input type="radio" name="{{ q.id }}" value="{{ key }}" {% if q.solved %}disabled{% endif %}> {{ text }}</label>
+              {% endfor %}
+            </div>
+            <button class="btn small ans-btn" type="button">Submit</button>
+            <div class="q-msg">{% if q.solved %}Correct Answer{% endif %}</div>
+          </div>
+          {% else %}
+          <div class="question {% if q.solved %}solved{% endif %}" data-qid="{{ q.id }}">
+            <p class="q-text">{{ q.text }}</p>
+            <div class="q-row">
+              <input type="text" class="q-input" placeholder="Answer" {% if q.solved %}disabled value="&#10003;"{% endif %}>
+              <button class="btn small ans-btn" type="button" {% if q.solved %}disabled{% endif %}>Submit</button>
+              <button class="btn small ghost hint-q" type="button" title="{{ q.hint }}">?</button>
+            </div>
+            <div class="q-msg">{% if q.solved %}Correct Answer{% endif %}</div>
+            <div class="q-hint" hidden>{{ q.hint }}</div>
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </details>
+    {% endfor %}
+
+    <div class="flag-box" id="flag-box" {% if not room_done %}hidden{% endif %}>
+      <div class="flag-title">Room complete &mdash; flag captured</div>
+      <code class="flag" id="flag-val">{{ flag if room_done else '' }}</code>
+      <p class="flag-next">Room solved. Finish Knowledge Check, Evidence Mode and the Final Report, then open Case Closed to complete this lab (+100 points){% if next_case %} and unlock <b>{{ next_case.num }} &middot; {{ next_case.name }}</b>{% endif %}.</p>
+      <a class="btn" href="{{ url_for('knowledge', lab_id=lab_id) }}">Continue to Knowledge Check &rarr;</a>
+    </div>
+  </section>
+
+  <aside class="side">
+    <div class="attackbox">
+      <div class="ab-top">
+        <span class="ab-menu">Applications</span><span class="ab-menu">Places</span><span class="ab-menu">System</span>
+        <span class="ab-date" id="ab-date"></span>
+        <span class="ab-ip">AttackBox IP: 127.0.0.1 <i class="ab-dot off" id="ab-dot"></i></span>
+      </div>
+      <div class="ab-desktop">
+        <div class="ab-icons">
+          <button type="button" class="ab-icon" data-open="term-win"><span class="ab-glyph">&#8962;</span>root's Home</button>
+          <button type="button" class="ab-icon" data-open="tools-win"><span class="ab-glyph">&#128193;</span>Tools</button>
+          <button type="button" class="ab-icon" data-open="tools-win"><span class="ab-glyph">&#128193;</span>NetworkConfigs</button>
+          <button type="button" class="ab-icon" data-open="term-win"><span class="ab-glyph">&gt;_</span>Terminal</button>
+        </div>
+        <div class="ab-win" id="term-win">
+          <div class="term-bar"><span class="term-dot r"></span><span class="term-dot y"></span><span class="term-dot g"></span>
+            <span class="term-title">{{ prompt }}</span>
+            <button type="button" class="ab-close" data-close="term-win" aria-label="Minimize terminal">&minus;</button></div>
+          <div class="term" id="term">
+            <div class="term-out" id="term-out">Type <b>help</b> to list the tools in this sandbox.
+Tip: use &uarr; / &darr; for command history.
+</div>
+            <div class="term-line"><span class="term-prompt">{{ prompt }}:~$</span><input id="term-in" type="text" autocomplete="off" spellcheck="false" disabled></div>
+            <div class="term-locked" id="term-locked">Lab is stopped. Press <b>&#9654; Start Lab</b> to power on this terminal.</div>
+          </div>
+        </div>
+        <div class="ab-win" id="tools-win" hidden>
+          <div class="term-bar"><span class="term-title">Tools</span>
+            <button type="button" class="ab-close" data-close="tools-win" aria-label="Close">&minus;</button></div>
+          <div class="ab-tools">Open the <b>Terminal</b> and type <code>help</code> to see every tool available in this lab.</div>
+        </div>
+      </div>
+      <div class="ab-task"><button type="button" class="ab-start" data-open="term-win" aria-label="Open terminal">&#9638;</button><span class="ab-clock" id="ab-clock"></span></div>
+    </div>
+
+    <div class="board">
+      <div class="board-title">Evidence Board <span class="muted" id="ev-count">{{ unlocked|length }}/{{ catalog|length }}</span></div>
+      {% for key, ev in catalog.items() %}
+        <div class="ev-item {% if key in unlocked %}on{% endif %}" id="ev-{{ key }}">
+          <span class="ev-id">{{ key }}</span>
+          <span class="ev-title">{% if key in unlocked %}{{ ev.title }}{% else %}Locked{% endif %}</span>
+          <span class="ev-desc">{% if key in unlocked %}{{ ev.description }}{% endif %}</span>
+        </div>
+      {% endfor %}
+    </div>
+  </aside>
+</div></div>
+
+<script id="room-data" type="application/json">{{ client_data | tojson }}</script>
+<script src="{{ url_for('static', filename='room.js') }}"></script>
+{% endblock %}

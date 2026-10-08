@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}{{ meta.name }} &mdash; Case Closed{% endblock %}
+{% block content %}
+<div class="panel">
+  <div class="kicker">Case Closed</div>
+  <h1>{{ meta.client }} &middot; Case solved</h1>
+
+  <div class="complete-panel {% if completed %}done{% endif %}">
+    <div class="complete-head">
+      {% if completed and run_done %}<b>&#10003; Lab completed</b> &middot; <span class="complete-points">{{ lab_points }} points earned</span>
+      {% elif completed %}<b>&#10003; Already completed</b> &middot; <span class="complete-points">{{ lab_points }} points earned</span>
+        <span class="muted">&mdash; replaying doesn't add more points; finish the parts below to complete this run.</span>
+      {% else %}<b>Complete every part to earn {{ points_available }} points</b>{% endif %}
+    </div>
+    <ul class="parts">
+      {% for p in parts %}
+        <li class="{{ 'ok' if p.done else 'todo' }}">{% if p.done %}&#10003;{% else %}&#9675;{% endif %}
+          {% if p.done %}{{ p.label }}{% else %}<a href="{{ p.url }}">{{ p.label }}</a>{% endif %}</li>
+      {% endfor %}
+      <li class="{{ 'ok' if run_done else 'todo' }}">{% if run_done %}&#10003;{% else %}&#9675;{% endif %} Case Closed</li>
+    </ul>
+  </div>
+
+  {% if flag %}
+  <div class="flag-box"><div class="flag-title">Flag captured</div><code class="flag">{{ flag }}</code></div>
+  {% endif %}
+
+  <div class="score-hero">
+    <div class="score-number">{{ total_score }}</div>
+    <div class="score-label">Performance Score</div>
+  </div>
+
+  <div class="report-grid">
+    {% for name, (pct, weight) in breakdown.items() %}
+      <div class="report-check">
+        <div class="rc-title">{{ name.replace('_', ' ')|title }} <span class="muted">({{ weight }}%)</span></div>
+        <div class="bar"><div class="bar-fill" data-pct="{{ pct }}"></div></div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <h3>Skills Demonstrated</h3>
+  <div class="chip-row">
+    {% for s in skills %}<span class="chip">{{ s }}</span>{% endfor %}
+  </div>
+
+  <h3>Recommended Remediation</h3>
+  <ul class="remediation">
+    {% for r in remediation %}<li>{{ r }}</li>{% endfor %}
+  </ul>
+
+  <div class="mirage-note">
+    <span class="mentor-tag">{{ meta.closing_label }}</span>
+    <p>{{ meta.closing_note }}</p>
+  </div>
+
+  <div class="dev-line">Lab developer: <b>{{ developer }}</b></div>
+
+  <div class="outcome-actions">
+    <a class="btn ghost" href="{{ url_for('index') }}">Go to Dashboard</a>
+    {% if next_lab and next_unlocked %}
+      <a class="btn" href="{{ url_for('brief', lab_id=next_lab) }}">Next Lab &rarr;</a>
+    {% elif next_lab %}
+      <span class="muted">Complete every part of this lab to unlock the next one.</span>
+    {% else %}
+      <span class="muted">This is the last lab of the series.</span>
+    {% endif %}
+    <form class="inline-form" method="post" action="{{ url_for('reset', lab_id=lab_id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn ghost" type="submit" data-confirm="Reset this lab and play it again from the Case Briefing? (points you already earned are kept)">&#8635; Reset &amp; play again</button></form>
+  </div>
+</div>
+
+{% if run_done %}
+<div class="modal-backdrop" id="complete-modal" role="dialog" aria-modal="true" aria-labelledby="complete-title">
+  <div class="modal-card">
+    <button type="button" class="modal-x" data-close-modal aria-label="Close">&times;</button>
+    <div class="modal-check">&#10003;</div>
+    <h2 id="complete-title">Lab completed successfully!</h2>
+    <p class="modal-sub">{{ meta.name }} &middot; {{ meta.client }}</p>
+    <div class="modal-points">+{{ lab_points }} points</div>
+    <p class="modal-dev">Lab developer: <b>{{ developer }}</b></p>
+    <div class="modal-actions">
+      <a class="btn ghost" href="{{ url_for('index') }}">Go to Dashboard</a>
+      {% if next_lab %}<a class="btn" href="{{ url_for('brief', lab_id=next_lab) }}">Next Lab &rarr;</a>
+      {% else %}<span class="muted">Last lab &mdash; every case is complete!</span>{% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

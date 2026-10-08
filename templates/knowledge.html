@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{{ meta.name }} &mdash; Knowledge Check{% endblock %}
+{% block content %}
+<div class="panel">
+  <div class="kicker">Knowledge Check</div>
+  <h1>Three quick checks before you close the case</h1>
+
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% for q in checks %}
+      <div class="kc-block">
+        <div class="kc-level">Level {{ q.level }} &middot; {{ q.label }}</div>
+        <p class="kc-prompt">{{ q.prompt }}</p>
+        <div class="option-list compact">
+          {% for key, text in q.options.items() %}
+            {% set ans = graded[loop.index0|string] if graded else None %}
+            <label class="option {% if graded and graded[loop.index0|string] == key %}chosen{% endif %} {% if graded and key == q.correct %}correct-key{% endif %}">
+              <input type="radio" name="q{{ loop.index0 }}" value="{{ key }}" {% if prog.knowledge.get(loop.index0|string) == key %}checked{% endif %} {% if graded %}disabled{% endif %}>
+              <span class="option-key">{{ key|upper }}</span>
+              <span class="option-text">{{ text }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+    {% if not graded %}
+      <button class="btn" type="submit">Submit Answers</button>
+    {% endif %}
+  </form>
+
+  {% if graded %}
+    <div class="feedback good">
+      Score: <strong>{{ prog.knowledge_score }} / {{ checks|length }}</strong>
+    </div>
+    <a class="btn" href="{{ url_for('evidence', lab_id=lab_id) }}">Continue to Evidence Mode &rarr;</a>
+  {% endif %}
+</div>
+{% endblock %}

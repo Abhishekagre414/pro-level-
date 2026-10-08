@@ -1,0 +1,23 @@
+name: Dependency audit (weekly)
+
+# New advisories appear against pinned versions without any code change, so a green CI run last
+# month says nothing about today. This re-audits on a schedule; a failure emails the workflow's
+# maintainers and shows red on the repo. Run it by hand from the Actions tab at any time.
+on:
+  schedule:
+    - cron: "17 5 * * 1"        # Mondays 05:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pip-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pip-audit
+      - run: pip-audit -r requirements-prod.txt

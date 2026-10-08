@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ meta.name }} &mdash; Evidence Mode{% endblock %}
+{% block content %}
+<div class="panel">
+  <div class="kicker">Evidence Mode</div>
+  <h1>Trace the chain from technique to impact</h1>
+
+  <h3>Evidence Catalog <span class="muted">({{ unlocked_keys|length }} / {{ catalog|length }} unlocked)</span></h3>
+  <div class="evidence-grid">
+    {% for key, ev in catalog.items() %}
+      {% if key in unlocked_keys %}
+        <div class="evidence-card">
+          <div class="evidence-id">{{ key }}</div>
+          <h4>{{ ev.title }}</h4>
+          <div class="evidence-source">{{ ev.source }}</div>
+          <p>{{ ev.description }}</p>
+        </div>
+      {% else %}
+        <div class="evidence-card locked">
+          <div class="evidence-id">{{ key }}</div>
+          <h4>Locked</h4>
+          <p>Unlocks as the investigation progresses.</p>
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <h3>Reconstruct the Attack Chain</h3>
+  <p class="muted">For each link, pick the option the evidence actually supports.</p>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% for slot in slot_order %}
+      {% set link = chain_links[slot] %}
+      <div class="kc-block">
+        <div class="kc-level">{{ link.label }}</div>
+        <div class="option-list compact">
+          {% for key, text in link.options.items() %}
+            <label class="option {% if graded and graded[slot] == key %}chosen{% endif %} {% if graded and key == link.correct %}correct-key{% endif %}">
+              <input type="radio" name="{{ slot }}" value="{{ key }}" {% if prog.chain.get(slot) == key %}checked{% endif %} {% if graded %}disabled{% endif %}>
+              <span class="option-text">{{ text }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+    {% if not graded %}
+      <button class="btn" type="submit">Submit Attack Chain</button>
+    {% endif %}
+  </form>
+
+  {% if graded %}
+    <div class="feedback {% if prog.chain_correct %}good{% else %}warn{% endif %}">
+      {% if prog.chain_correct %}
+        <strong>Chain reconstructed correctly.</strong> All evidence is now unlocked.
+      {% else %}
+        <strong>Not quite a clean chain.</strong> Check the highlighted correct links above.
+      {% endif %}
+    </div>
+    <a class="btn" href="{{ url_for('report', lab_id=lab_id) }}">Continue to Final Report &rarr;</a>
+  {% endif %}
+</div>
+{% endblock %}

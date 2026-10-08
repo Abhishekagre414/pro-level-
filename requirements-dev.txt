@@ -1,0 +1,6 @@
+-r requirements.txt
+pytest>=8.0
+pytest-cov>=5.0
+bandit>=1.7
+pip-audit>=2.7
+gunicorn>=23.0.0,<26

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ meta.name }} &mdash; Final Report{% endblock %}
+{% block content %}
+<div class="panel">
+  <div class="kicker">Final Report</div>
+  <h1>Write up your findings</h1>
+  <p class="muted">Cover: what happened, what was affected, the mechanism, the business/security impact, how to detect it, and how to fix it. Cite your evidence.</p>
+
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <textarea name="report_text" rows="10" placeholder="Root cause, evidence cited, security impact, detection approach, and mitigation...">{{ prog.report }}</textarea>
+    <button class="btn" type="submit">Submit Report</button>
+  </form>
+
+  {% if result %}
+    <div class="feedback {% if result.covered >= result.total - 1 %}good{% else %}warn{% endif %}">
+      <strong>Coverage: {{ result.covered }} / {{ result.total }} report sections.</strong>
+      {% if result.claim_ok %} Your report cites evidence consistent with the core claim.{% else %} Consider citing specific evidence IDs to support your claim.{% endif %}
+    </div>
+    <div class="report-grid">
+      {% for group, r in result.groups.items() %}
+        <div class="report-check {% if r.covered %}good{% else %}warn{% endif %}">
+          <div class="rc-title">{{ group.replace('_', ' ')|title }}</div>
+          <div class="rc-sub">{{ r.covered_subs }} / {{ r.total_subs }} angles covered</div>
+        </div>
+      {% endfor %}
+    </div>
+    <p class="muted small">Reference claim analysts converge on: &ldquo;{{ claim_text }}&rdquo;</p>
+    <a class="btn" href="{{ url_for('outcome', lab_id=lab_id) }}">See Case Outcome &rarr;</a>
+  {% endif %}
+</div>
+{% endblock %}

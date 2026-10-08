@@ -1,0 +1,5 @@
+# Runtime set for production images: the exact tested lock plus the WSGI server.
+# gunicorn is a range (not an exact pin) because it could not be resolved when this was written;
+# after your first networked build, pin it: `pip freeze | grep -i gunicorn >> requirements.lock`.
+-r requirements.lock
+gunicorn>=23.0.0,<26

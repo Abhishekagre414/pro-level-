@@ -1,0 +1,20 @@
+# Caddy obtains and renews the certificate, redirects http -> https, and sets
+# X-Forwarded-For/Proto/Host itself (overwriting anything a client sent), which is
+# exactly what LABDEMO_TRUST_PROXY=1 + LABDEMO_PROXY_HOPS=1 expects.
+{$LABDEMO_DOMAIN} {
+	encode zstd gzip
+
+	# Same cap the app enforces (MAX_CONTENT_LENGTH = 64 KB); reject oversized bodies at the edge.
+	request_body {
+		max_size 64KB
+	}
+
+	header {
+		-Server
+		-X-Powered-By
+	}
+
+	# No active health checks on purpose: they would probe with Host "app:8000", which the app's
+	# LABDEMO_ALLOWED_HOSTS pinning correctly rejects. Docker's healthcheck covers liveness.
+	reverse_proxy app:8000
+}
