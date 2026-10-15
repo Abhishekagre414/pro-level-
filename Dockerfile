@@ -1,7 +1,7 @@
 # AI Security Storyline Labs -- production image (gunicorn, non-root, one worker by design).
 # Build:  docker build -t labdemo .
 # Run behind an HTTPS proxy; see docker-compose.yml and DEPLOYMENT.md.
-FROM python:3.12-slim
+FROM python:3.14-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
